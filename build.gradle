@@ -12,6 +12,8 @@ repositories {
 
 dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
+
+    implementation("com.google.guava:guava:32.1.2-jre")
 }
 
 test {
