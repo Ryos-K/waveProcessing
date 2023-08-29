@@ -4,7 +4,9 @@ import com.google.common.io.LittleEndianDataInputStream
 import com.google.common.io.LittleEndianDataOutputStream
 import java.awt.image.SampleModel
 import java.io.*
+import kotlin.math.pow
 import kotlin.math.roundToInt
+import kotlin.time.times
 
 data class Mono16Wave(
 	val samplesPerSec: Int,
@@ -18,7 +20,7 @@ class Mono16Processor {
 	private val channel = 1
 	private val blockSize = 2
 
-	private lateinit var wave: Mono16Wave
+	private var wave = Mono16Wave(0, 0, 0, listOf())
 
 	fun read(fileName: String): Mono16Processor? {
 		try {
@@ -64,10 +66,9 @@ class Mono16Processor {
 		}
 	}
 
-	fun showInfo(): Mono16Processor {
-		if (this::wave.isInitialized) {
-			println(
-				"""
+	fun showInfo(showData: Boolean = false): Mono16Processor {
+		println(
+			"""
 			WaveFormatType: $waveFormatType
 			channel		  : $channel
 			SamplePerSec  : ${wave.samplesPerSec}
@@ -76,13 +77,14 @@ class Mono16Processor {
 			BitsPerSample : ${wave.bitsPerSample}
 			Size          : ${wave.size}
 			DataSize      : ${wave.data.size}
+            	""".trimIndent()
+		)
+		if (showData) println(
+			"""
 			Data          :
 			${wave.data}
-            	""".trimIndent()
-			)
-		} else {
-			println("wave is not initialized")
-		}
+			""".trimIndent()
+		)
 		return this
 	}
 
@@ -90,4 +92,21 @@ class Mono16Processor {
 		wave = Mono16Wave(samplesPerSec, bitsPerSample, size * blockSize, List(size) { function(it) })
 		return this
 	}
+
+	fun delay(weights: List<Double>, delayMillis: Int): Mono16Processor {
+		val delaySamples = wave.samplesPerSec * delayMillis / 1000
+		val data = MutableList(wave.data.size) { 0.0 }
+
+		repeat(data.size) { idx ->
+			data[idx] += wave.data[idx]
+			weights.forEachIndexed { jdx, weight ->
+				if (idx + (jdx + 1) * delaySamples < data.size)
+					data[idx + (jdx + 1) * delaySamples] += wave.data[idx] * weight
+			}
+		}
+		wave = wave.copy(data = data)
+		return this
+	}
+
+
 }
