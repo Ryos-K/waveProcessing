@@ -4,12 +4,13 @@ import com.google.common.io.LittleEndianDataInputStream
 import com.google.common.io.LittleEndianDataOutputStream
 import java.awt.image.SampleModel
 import java.io.*
+import kotlin.math.roundToInt
 
 data class Mono16Wave(
 	val samplesPerSec: Int,
 	val bitsPerSample: Short,
-	val size: Int,
-	val data: List<Short>,
+	val size: Int, // "size" is "blockSize" times as long as "data.size"
+	val data: List<Double>,
 )
 
 class Mono16Processor {
@@ -28,10 +29,8 @@ class Mono16Processor {
 				val bitsPerSample = readShort()
 				skipNBytes(4)
 				val size = readInt()
-				val data = List(size / blockSize) { readShort() }
-				wave = Mono16Wave(
-					samplesPerSec, bitsPerSample, size, data
-				)
+				val data = List(size / blockSize) { 1.0 * readShort() / Short.MAX_VALUE }
+				wave = Mono16Wave(samplesPerSec, bitsPerSample, size, data)
 			}
 			return this
 		} catch (e: Exception) {
@@ -56,7 +55,7 @@ class Mono16Processor {
 				writeShort(wave.bitsPerSample.toInt())
 				write("data".toByteArray())
 				writeInt(wave.size)
-				wave.data.forEach { writeShort(it.toInt()) }
+				wave.data.forEach { writeShort((it * Short.MAX_VALUE).toInt()) }
 			}
 			return this
 		} catch (e: Exception) {
@@ -75,12 +74,20 @@ class Mono16Processor {
 			BytesPerSec   : ${wave.samplesPerSec * blockSize}
 			BlockSize     : ${blockSize}
 			BitsPerSample : ${wave.bitsPerSample}
+			Size          : ${wave.size}
 			DataSize      : ${wave.data.size}
+			Data          :
+			${wave.data}
             	""".trimIndent()
 			)
 		} else {
 			println("wave is not initialized")
 		}
+		return this
+	}
+
+	fun generateWave(samplesPerSec: Int, bitsPerSample: Short, size: Int, function: (Int) -> Double): Mono16Processor {
+		wave = Mono16Wave(samplesPerSec, bitsPerSample, size * blockSize, List(size) { function(it) })
 		return this
 	}
 }
