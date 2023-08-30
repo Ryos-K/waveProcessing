@@ -1,10 +1,13 @@
 package waveprocessor
 
+import com.github.sh0nk.matplotlib4j.NumpyUtils
+import com.github.sh0nk.matplotlib4j.Plot
 import com.google.common.io.LittleEndianDataInputStream
 import com.google.common.io.LittleEndianDataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import kotlin.coroutines.CoroutineContext
 
 data class Mono16Wave(
 	val samplesPerSec: Int,
@@ -87,6 +90,17 @@ class Mono16Processor {
 		return this
 	}
 
+	fun showGraph(): Mono16Processor {
+
+		val x = NumpyUtils.linspace(0000.0, 40000.0 - 1, 10000)
+		val y = x.map { xi -> wave.data[xi.toInt()] }.toList()
+		Plot.create().run {
+			plot().add(x, y)
+			show()
+		}
+		return this
+	}
+
 	fun generateWave(samplesPerSec: Int, bitsPerSample: Short, size: Int, function: (Int) -> Double): Mono16Processor {
 		wave = Mono16Wave(samplesPerSec, bitsPerSample, size * blockSize, List(size) { function(it) })
 		return this
@@ -137,7 +151,7 @@ class Mono16Processor {
 		wave = wave.copy(data = wave.data.map {
 			when {
 				it > threshold -> threshold + (it - threshold) * ratio
-				it < threshold -> -threshold + (it + threshold) * ratio
+				it < -threshold -> -threshold + (it + threshold) * ratio
 				else -> it
 			}
 		}.map {

@@ -14,6 +14,7 @@ fun main(args: Array<String>) {
 //		?.distort(1.0, 20.0)
 //		?.clip(0.1, 0.9)
 		?.compress(0.1, 0.1)
+		?.showGraph()
 		?.showInfo()
 		?.write("src/main/resources/hoge.wav")
 }
