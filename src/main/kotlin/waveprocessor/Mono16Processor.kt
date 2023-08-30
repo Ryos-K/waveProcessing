@@ -2,11 +2,9 @@ package waveprocessor
 
 import com.google.common.io.LittleEndianDataInputStream
 import com.google.common.io.LittleEndianDataOutputStream
-import java.awt.image.SampleModel
-import java.io.*
-import kotlin.math.pow
-import kotlin.math.roundToInt
-import kotlin.time.times
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 data class Mono16Wave(
 	val samplesPerSec: Int,
@@ -42,6 +40,7 @@ class Mono16Processor {
 	}
 
 	fun write(fileName: String): Mono16Processor? {
+		clip(1.0)
 		try {
 			LittleEndianDataOutputStream(FileOutputStream(File(fileName), false)).run {
 				write("RIFF".toByteArray())
@@ -105,6 +104,32 @@ class Mono16Processor {
 			}
 		}
 		wave = wave.copy(data = data)
+		return this
+	}
+
+	fun clip(level: Double): Mono16Processor {
+		return clip(-level, level)
+	}
+
+	fun clip(lowerLevel: Double, upperLevel: Double): Mono16Processor {
+		wave = wave.copy(data = wave.data.map {
+			when {
+				it > upperLevel -> upperLevel
+				it < lowerLevel -> lowerLevel
+				else -> it
+			}
+		})
+		return this
+	}
+
+	fun distort(level: Double, amp: Double): Mono16Processor {
+		wave = wave.copy(data = wave.data.map {
+			when {
+				it * amp > level -> level
+				it * amp < -level -> -level
+				else -> it * amp
+			}
+		})
 		return this
 	}
 
