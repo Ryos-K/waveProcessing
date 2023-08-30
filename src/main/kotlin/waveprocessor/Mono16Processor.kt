@@ -133,5 +133,16 @@ class Mono16Processor {
 		return this
 	}
 
-
+	fun compress(threshold: Double, ratio: Double): Mono16Processor {
+		wave = wave.copy(data = wave.data.map {
+			when {
+				it > threshold -> threshold + (it - threshold) * ratio
+				it < threshold -> -threshold + (it + threshold) * ratio
+				else -> it
+			}
+		}.map {
+			it / (threshold + (1 - threshold) * ratio)
+		})
+		return this
+	}
 }
