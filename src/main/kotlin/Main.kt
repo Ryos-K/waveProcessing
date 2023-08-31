@@ -1,6 +1,4 @@
 import waveprocessor.Mono16Processor
-import kotlin.math.PI
-import kotlin.math.sin
 
 fun main(args: Array<String>) {
 	val A = 0.1
@@ -13,8 +11,11 @@ fun main(args: Array<String>) {
 //		?.delay(listOf(0.5, 0.2, 0.2, 0.2, 0.2), 100)
 //		?.distort(1.0, 20.0)
 //		?.clip(0.1, 0.9)
-		?.compress(0.1, 0.1)
-		?.showGraph()
+//		?.compress(0.1, 0.1)
+		?.showGraph(.0, 511.0, 512)
+		?.filterByLpf(500.0, 1000.0)
+		?.compress(0.2, 0.1)
+		?.showGraph(.0, 511.0, 512)
 		?.showInfo()
 		?.write("src/main/resources/hoge.wav")
 }

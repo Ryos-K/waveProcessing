@@ -18,6 +18,9 @@ dependencies {
     // https://mvnrepository.com/artifact/com.github.sh0nk/matplotlib4j
     implementation("com.github.sh0nk:matplotlib4j:0.5.0")
 
+    // https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-core
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+
 }
 
 test {

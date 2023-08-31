@@ -4,10 +4,12 @@ import com.github.sh0nk.matplotlib4j.NumpyUtils
 import com.github.sh0nk.matplotlib4j.Plot
 import com.google.common.io.LittleEndianDataInputStream
 import com.google.common.io.LittleEndianDataOutputStream
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import kotlin.coroutines.CoroutineContext
+import kotlin.math.round
 
 data class Mono16Wave(
 	val samplesPerSec: Int,
@@ -90,13 +92,18 @@ class Mono16Processor {
 		return this
 	}
 
-	fun showGraph(): Mono16Processor {
-
-		val x = NumpyUtils.linspace(0000.0, 40000.0 - 1, 10000)
-		val y = x.map { xi -> wave.data[xi.toInt()] }.toList()
-		Plot.create().run {
-			plot().add(x, y)
-			show()
+	fun showGraph(
+		start: Double = .0,
+		end: Double = wave.data.size.toDouble(),
+		num: Int = (end - start).toInt()
+	): Mono16Processor {
+		GlobalScope.launch {
+			val x = NumpyUtils.linspace(start, end, num)
+			val y = x.map { xi -> wave.data[xi.toInt()] }.toList()
+			Plot.create().run {
+				plot().add(x, y)
+				show()
+			}
 		}
 		return this
 	}
@@ -157,6 +164,26 @@ class Mono16Processor {
 		}.map {
 			it / (threshold + (1 - threshold) * ratio)
 		})
+		return this
+	}
+
+	fun convolve(filter: List<Double>): Mono16Processor {
+		val data = MutableList(wave.data.size) { 0.0 }
+		for (n in data.indices) {
+			for (m in filter.indices) {
+				if (n - m >= 0) data[n] += filter[m] * wave.data[n - m]
+			}
+		}
+		wave = wave.copy(data = data)
+		return this
+	}
+
+	fun filterByLpf(fe: Double, delta: Double): Mono16Processor {
+		val j = (round(3.1 / (delta / wave.samplesPerSec)).toInt() - 1)
+			.let { if (it % 2 == 1) it + 1 else it } // if j is even, j++
+		val window = genHanningWindow(j + 1)
+		val firLpf = genFirLpf(fe / wave.samplesPerSec, j, window)
+		convolve(firLpf)
 		return this
 	}
 }
