@@ -19,6 +19,15 @@ data class Complex(
 
 fun Number.toComplex() = Complex(this.toDouble(), 0.0)
 
+fun dft(x: List<Double>, offset: Int = 0, n: Int = x.size - offset): List<Complex> {
+	val wToPowerOf = List(n) { Complex(cos(2.0 * PI * it / n), sin(2.0 * PI * it / n)) }
+	return List(n) { idx ->
+		x.slice(IntRange(offset, n)).fold(Complex(.0, .0)) { sum, current ->
+			wToPowerOf[idx % n] * current
+		}
+	}
+}
+
 //fun fft(x: Array<Complex>, exp: Int): Array<Complex> {
 //	val X = Array(2.0.pow(exp).toInt()) { Complex(.0, .0) }
 //
@@ -27,7 +36,7 @@ fun Number.toComplex() = Complex(this.toDouble(), 0.0)
 
 fun sinc(x: Double) = if (x == .0) 1.0 else sin(x) / x
 
-fun genHanningWindow(N: Int) = List(N) { 0.5 - 0.5 * cos(2.0 * PI * (it + 0.5) / N) }
+fun genHanningWindow(n: Int) = List(n) { 0.5 - 0.5 * cos(2.0 * PI * (it + 0.5) / n) }
 
 fun genFirLpf(fe: Double, j: Int, window: List<Double>) = List(j + 1) {
 	2.0 * fe * sinc(2.0 * PI * fe * it) * window[it]
