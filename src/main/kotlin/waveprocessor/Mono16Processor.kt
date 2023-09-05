@@ -2,10 +2,10 @@ package waveprocessor
 
 import com.github.sh0nk.matplotlib4j.NumpyUtils
 import com.github.sh0nk.matplotlib4j.Plot
+import com.github.sh0nk.matplotlib4j.PlotImpl
 import com.google.common.io.LittleEndianDataInputStream
 import com.google.common.io.LittleEndianDataOutputStream
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -22,6 +22,12 @@ class Mono16Processor {
 	private val waveFormatType = 1
 	private val channel = 1
 	private val blockSize = 2
+
+	private val jobs = mutableListOf<Job>()
+
+	fun cancelJobs() {
+		jobs.forEach { it.cancel() }
+	}
 
 	private var wave = Mono16Wave(0, 0, 0, listOf())
 
@@ -97,14 +103,34 @@ class Mono16Processor {
 		end: Double = wave.data.size.toDouble(),
 		num: Int = (end - start).toInt()
 	): Mono16Processor {
-		GlobalScope.launch {
-			val x = NumpyUtils.linspace(start, end, num)
+		jobs.add(GlobalScope.launch {
+			val x = NumpyUtils.linspace(start, end - 1, num)
 			val y = x.map { xi -> wave.data[xi.toInt()] }.toList()
 			Plot.create().run {
 				plot().add(x, y)
+				title("envelope")
 				show()
 			}
-		}
+		})
+		return this
+	}
+
+	fun showFrequency(
+		offset: Int = 0,
+		n: Int = 128
+	): Mono16Processor {
+		jobs.add(GlobalScope.launch {
+			val frequency = dft(wave.data.map { it.toComplex() }, offset, n)
+			println(frequency)
+			val x = NumpyUtils.linspace(.0, frequency.size - 1.0, frequency.size)
+			val y = x.map { xi -> frequency[xi.toInt()].norm2() }.toList()
+			println(frequency.size)
+			Plot.create().run {
+				plot().add(x, y)
+				title("Frequency")
+				show()
+			}
+		})
 		return this
 	}
 

@@ -19,11 +19,13 @@ data class Complex(
 
 fun Number.toComplex() = Complex(this.toDouble(), 0.0)
 
-fun dft(x: List<Double>, offset: Int = 0, n: Int = x.size - offset): List<Complex> {
-	val wToPowerOf = List(n) { Complex(cos(2.0 * PI * it / n), sin(2.0 * PI * it / n)) }
+fun dft(x: List<Complex>, offset: Int = 0, n: Int = x.size - offset): List<Complex> {
+	val wToPowerOf = List(n) { Complex(cos(2.0 * PI * it / n), -sin(2.0 * PI * it / n)) }
+	val window = genHanningWindow(n)
+	val windowedX = List(n) { x[offset + it] * window[it] }
 	return List(n) { idx ->
-		x.slice(IntRange(offset, n)).fold(Complex(.0, .0)) { sum, current ->
-			wToPowerOf[idx % n] * current
+		windowedX.foldIndexed(Complex(.0, .0)) { jdx, sum, current ->
+			sum + wToPowerOf[(idx * jdx) % n] * current
 		}
 	}
 }
@@ -36,7 +38,7 @@ fun dft(x: List<Double>, offset: Int = 0, n: Int = x.size - offset): List<Comple
 
 fun sinc(x: Double) = if (x == .0) 1.0 else sin(x) / x
 
-fun genHanningWindow(n: Int) = List(n) { 0.5 - 0.5 * cos(2.0 * PI * (it + 0.5) / n) }
+fun genHanningWindow(n: Int) = List(n) { 0.5 - 0.5 * cos(2.0 * PI * it / n) }
 
 fun genFirLpf(fe: Double, j: Int, window: List<Double>) = List(j + 1) {
 	2.0 * fe * sinc(2.0 * PI * fe * it) * window[it]
