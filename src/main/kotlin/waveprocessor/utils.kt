@@ -38,8 +38,10 @@ fun dft(x: List<Complex>, offset: Int = 0, n: Int = x.size - offset): List<Compl
 
 fun sinc(x: Double) = if (x == .0) 1.0 else sin(x) / x
 
-fun genHanningWindow(n: Int) = List(n) { 0.5 - 0.5 * cos(2.0 * PI * it / n) }
+fun genHanningWindow(n: Int) =
+	if (n % 2 == 0) List(n) { 0.5 - 0.5 * cos(2.0 * PI * it / n) }
+	else List(n) { 0.5 - 0.5 * cos(2 * PI * (it + 0.5) / n) }
 
 fun genFirLpf(fe: Double, j: Int, window: List<Double>) = List(j + 1) {
-	2.0 * fe * sinc(2.0 * PI * fe * it) * window[it]
+	2.0 * fe * sinc(2.0 * PI * fe * (it - j / 2)) * window[it]
 }

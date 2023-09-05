@@ -123,7 +123,7 @@ class Mono16Processor {
 			val frequency = dft(wave.data.map { it.toComplex() }, offset, n)
 			println(frequency)
 			val x = NumpyUtils.linspace(.0, frequency.size - 1.0, frequency.size)
-			val y = x.map { xi -> frequency[xi.toInt()].norm2() }.toList()
+			val y = x.map { xi -> frequency[xi.toInt()].norm() }.toList()
 			println(frequency.size)
 			Plot.create().run {
 				plot().add(x, y)
